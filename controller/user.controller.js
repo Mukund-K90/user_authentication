@@ -50,7 +50,7 @@ async function userLogin(req, res) {
             return res.status(401).json({ message: "Password Authentication failed" });
         }
         else {
-            const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "24h" });
+            const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
             const userToken = await Token.findOne({ userId: user._id });
             if (!userToken) {
                 Token.create({
@@ -79,7 +79,7 @@ async function userLogin(req, res) {
 //Fetch Profile
 async function userProfile(req, res) {
     try {
-        const { token } = req.body;
+        const token = req.params.token;
         const decodeToken = jwt.verify(token, process.env.JWT_SECRET);
         const user = await User.findById(decodeToken.userId);
         if (!user) {
@@ -92,6 +92,7 @@ async function userProfile(req, res) {
             data: {
                 name: user.name,
                 email: user.email,
+                mobile: user.mobile,
                 joinedAt: user.createdAt
             }
         });
@@ -163,23 +164,12 @@ async function changePassword(req, res) {
 async function userResetPassword(req, res) {
     try {
         const user = await User.findOne({ email: req.body.email });
-        if (!user)
+        if (!user) {
             return res.status(400).json({ message: "user with given email doesn't exist" });
-
-        const token = await Token.findOne({ userId: user._id });
-        if (!token) {
-            const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
-            const newToken = await new Token({
-                userId: user._id,
-                token: token,
-            }).save();
-            const link = `${process.env.BASE_URL}:${process.env.PORT}/password-reset/${user._id}/${newToken.token}`;
-            await sendEmail(user.email, "Password reset", link);
         }
-        else {
-            const link = `${process.env.BASE_URL}:${process.env.PORT}/password-reset/${user._id}/${token.token}`;
-            await sendEmail(user.email, "Password reset", link);
-        }
+        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+        const link = `${process.env.BASE_URL}${process.env.PORT}/password-reset/${user._id}/${token}`;
+        await sendEmail(user.email, "Password reset", link);
 
         res.status(200).send({ message: "password reset link sent to your email account" });
     } catch (error) {
@@ -194,14 +184,13 @@ async function userResetPassword(req, res) {
 //reset-password
 async function resetPassword(req, res) {
     try {
-        const user = await User.findById(req.params.userId);
+        const token = req.params.token;
+        const userId=req.params.userId;
+        const decodeToken = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(decodeToken.userId);
+        if (!userId) return res.status(400).send({ message: "Invalid link or expired" });
+        if (!token) return res.status(400).send({ message: "Invalid link or expired" });
         if (!user) return res.status(400).json({ message: "invalid link or expired" });
-
-        const token = await Token.findOne({
-            userId: user._id,
-            token: req.params.token,
-        });
-        if (!token) return res.status(400).son({ message: "Invalid link or expired" });
 
         const hashedPassword = await bcrypt.hash(req.body.password, 10);
 

@@ -7,11 +7,11 @@ const { userValidation } = require('../middlewares/userValidation');
 router.post('/register',userValidation, userController.userRegister);
 router.get('/login', userController.userLogin);
 router.put('/changePassword', userController.changePassword);
-router.get('/profile', userController.userProfile);
-router.put('/update-profile/:token', userController.updateUserProfile);
+router.post('/profile/:token', userController.userProfile);
+router.post('/update-profile/:token', userController.updateUserProfile);
 router.post('/forgot-password', userController.userResetPassword);
 router.post('/reset-password', userController.userResetPassword);
-router.post('/password-reset/:userId/:token', userController.resetPassword);
+router.put('/password-reset/:userId/:token', userController.resetPassword);
 router.post('/logout', userController.userLogout);
 router.delete('/user-delete/:token',userController.userDelete);
 
