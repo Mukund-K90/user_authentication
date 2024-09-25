@@ -1,1 +1,1 @@
-First Create .anv and add your required data
+First Create .env File and add your required data
