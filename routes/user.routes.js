@@ -12,7 +12,7 @@ router.post('/update-profile/:token', userController.updateUserProfile);
 router.post('/forgot-password', userController.userResetPassword);
 router.post('/reset-password', userController.userResetPassword);
 router.put('/password-reset/:userId/:token', userController.resetPassword);
-router.post('/logout', userController.userLogout);
+router.post('/logout', userController.logOut);
 router.delete('/user-delete/:token',userController.userDelete);
 
 

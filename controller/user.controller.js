@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require('jsonwebtoken');
 const Token = require("../model/token");
 const { sendEmail } = require('../utils/sendEmail');
+const blacklist = new Set();
 
 
 //User Registration
@@ -51,13 +52,6 @@ async function userLogin(req, res) {
         }
         else {
             const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
-            const userToken = await Token.findOne({ userId: user._id });
-            if (!userToken) {
-                Token.create({
-                    userId: user._id,
-                    token: token,
-                });
-            }
             console.log(res.status(200).send({
                 code: 200,
                 success: true,
@@ -168,7 +162,7 @@ async function userResetPassword(req, res) {
             return res.status(400).json({ message: "user with given email doesn't exist" });
         }
         const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
-        const link = `${process.env.BASE_URL}${process.env.PORT}/password-reset/${user._id}/${token}`;
+        const link = `${process.env.BASE_URL}${process.env.PORT}/user/password-reset/${user._id}/${token}`;
         await sendEmail(user.email, "Password reset", link);
 
         res.status(200).send({ message: "password reset link sent to your email account" });
@@ -185,7 +179,7 @@ async function userResetPassword(req, res) {
 async function resetPassword(req, res) {
     try {
         const token = req.params.token;
-        const userId=req.params.userId;
+        const userId = req.params.userId;
         const decodeToken = jwt.verify(token, process.env.JWT_SECRET);
         const user = await User.findById(decodeToken.userId);
         if (!userId) return res.status(400).send({ message: "Invalid link or expired" });
@@ -222,6 +216,20 @@ async function userLogout(req, res) {
     }
 }
 
+//logout by add token in blacklist
+async function logOut(req, res) {
+    try {
+        const token = req.headers.authorization.split(" ")[1];
+        if (token) {
+            blacklist.add(token);
+        }
+        res.json({ message: 'Logout successful.' });
+    } catch (error) {
+        res.status(400).send({ message: "Invalid token " });
+    }
+}
+
+
 //delete user
 async function userDelete(req, res) {
     try {
@@ -257,5 +265,6 @@ module.exports = {
     resetPassword,
     userLogout,
     updateUserProfile,
-    userDelete
+    userDelete,
+    logOut
 }
