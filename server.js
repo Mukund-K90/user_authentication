@@ -9,7 +9,7 @@ const BASE_URL=process.env.BASE_URL ||"http://localhost:"
 connectDB();
 
 app.get('/', (req, res) => {
-    res.send("<h1>USER AUTHENTICATION</h1>");
+    res.send("<h1>USER AUTHENTICATION API</h1>");
 });
 
 app.use(express.json());
